@@ -53,3 +53,98 @@ function loadWantedData() {
             document.getElementById('wantedList').innerHTML = '<p>Error al cargar los datos.</p>';
         });
 }
+let allWantedData = []; // Variable global para almacenar los datos de la API
+
+// Cargar los datos y mostrarlos en la pestaña "Buscados"
+document.getElementById('loadDataBtn').addEventListener('click', () => {
+    fetch('https://api.fbi.gov/wanted/v1/list')
+        .then(response => response.json())
+        .then(data => {
+            allWantedData = data.items || [];
+            renderWantedList(allWantedData);
+        })
+        .catch(error => console.error('Error al cargar datos:', error));
+});
+
+function renderWantedList(dataArray) {
+    const wantedList = document.getElementById('wantedList');
+    wantedList.innerHTML = '';
+    dataArray.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('wanted-item');
+
+        const photoUrl = item.images && item.images[0] ? item.images[0].original : 'https://via.placeholder.com/250';
+        const name = item.title || 'Nombre no disponible';
+        const offices = item.field_offices?.join(', ') || 'Oficinas no disponibles';
+
+        div.innerHTML = `
+            <img src="${photoUrl}" alt="${name}">
+            <h3>${name}</h3>
+            <p><strong>Oficinas:</strong> ${offices}</p>
+        `;
+
+        wantedList.appendChild(div);
+    });
+}
+
+// Función para buscar por nombre en la pestaña "Buscar"
+function searchWanted() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const results = allWantedData.filter(item => item.title?.toLowerCase().includes(query));
+
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '';
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<p>No se encontraron coincidencias.</p>';
+        return;
+    }
+
+    results.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('wanted-item');
+
+        const photoUrl = item.images && item.images[0] ? item.images[0].original : 'https://via.placeholder.com/250';
+        const name = item.title || 'Nombre no disponible';
+        const offices = item.field_offices?.join(', ') || 'Oficinas no disponibles';
+
+        div.innerHTML = `
+            <img src="${photoUrl}" alt="${name}">
+            <h3>${name}</h3>
+            <p><strong>Oficinas:</strong> ${offices}</p>
+        `;
+
+        resultsContainer.appendChild(div);
+    });
+}
+
+document.getElementById('searchInput').addEventListener('input', () => {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const results = allWantedData.filter(item => item.title?.toLowerCase().includes(query));
+
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = '';
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<p>No se encontraron coincidencias.</p>';
+        return;
+    }
+
+    results.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('wanted-item');
+
+        const photoUrl = item.images && item.images[0] ? item.images[0].original : 'https://via.placeholder.com/250';
+        const name = item.title || 'Nombre no disponible';
+        const offices = item.field_offices?.join(', ') || 'Oficinas no disponibles';
+
+        div.innerHTML = `
+            <img src="${photoUrl}" alt="${name}">
+            <h3>${name}</h3>
+            <p><strong>Oficinas:</strong> ${offices}</p>
+        `;
+
+        resultsContainer.appendChild(div);
+    });
+});
+
