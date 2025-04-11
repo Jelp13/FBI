@@ -3,16 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FBI Wanted API</title>
+    <title>FBI Wanted</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Lista de Personas Más Buscadas - FBI</h1>
-        <button id="loadDataBtn">Cargar Personas Buscadas</button>
-        <div id="wantedList" class="wanted-list">
-            <!-- Los datos de las personas buscadas se agregarán aquí -->
-        </div>
+
+    <!-- Splash screen (se ocultará con JS después de unos segundos) -->
+    <div id="splashScreen" class="splash-screen">
+        <img src="logo.png" alt="Logo" class="logo">
+        <h1>FBI Wanted</h1>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="app-container" style="display:none;">
+        
+        <!-- Pestañas superiores -->
+        <nav class="tab-bar">
+            <button class="tab-btn" onclick="showTab('home')">Inicio</button>
+            <button class="tab-btn" onclick="showTab('wanted')">Buscados</button>
+            <button class="tab-btn" onclick="showTab('favorites')">Favoritos</button>
+            <button class="tab-btn" onclick="showTab('search')">Buscar</button>
+            <button class="tab-btn" onclick="showTab('register')">Registro</button>
+            <button class="tab-btn" onclick="showTab('about')">Sobre</button>
+        </nav>
+
+        <!-- Secciones de contenido -->
+        <section id="home" class="tab-content active">
+            <h2>Bienvenido a FBI Wanted</h2>
+            <p>Explora la información de personas buscadas.</p>
+        </section>
+
+        <section id="wanted" class="tab-content">
+            <h2>Personas Buscadas</h2>
+            <button id="loadDataBtn">Cargar Personas Buscadas</button>
+            <div id="wantedList" class="wanted-list"></div>
+        </section>
+
+        <section id="favorites" class="tab-content">
+            <h2>Favoritos</h2>
+            <div id="favoritesList"></div>
+        </section>
+
+        <section id="search" class="tab-content">
+            <h2>Buscar Persona</h2>
+            <input type="text" id="searchInput" placeholder="Buscar por nombre...">
+            <button onclick="searchWanted()">Buscar</button>
+            <div id="searchResults"></div>
+        </section>
+
+        <section id="register" class="tab-content">
+            <h2>Registro</h2>
+            <!-- Aquí irá el formulario -->
+        </section>
+
+        <section id="about" class="tab-content">
+            <h2>Sobre la App</h2>
+            <p>Esta app consume la API oficial del FBI para mostrar personas buscadas.</p>
+        </section>
+
+        <!-- Menú inferior -->
+        <nav class="bottom-menu">
+            <button onclick="showTab('home')">🏠 Inicio</button>
+            <button onclick="showTab('search')">🔍 Buscar</button>
+            <button onclick="showTab('favorites')">⭐ Favoritos</button>
+            <button onclick="showTab('register')">👤 Perfil</button>
+        </nav>
+
     </div>
 
     <script src="script.js"></script>
