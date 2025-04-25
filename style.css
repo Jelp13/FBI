@@ -308,36 +308,4 @@ img[onerror] {
     animation: loading 1.2s linear infinite;
 }
 
-@media (max-width: 768px) {
-    .tab-bar {
-        display: none !important;
-    }
-    
-    .bottom-menu {
-        display: flex !important;
-    }
-    
-    .wanted-item {
-        width: 100%;
-        max-width: 350px;
-    }
-    
-    /* Añadir espacio abajo para que el contenido no quede debajo del menú */
-    .app-container {
-        padding-bottom: 100px;
-    }
-}
 
-@media (min-width: 769px) {
-    .bottom-menu {
-        display: none !important;
-    }
-    
-    .tab-bar {
-        display: flex !important;
-    }
-    
-    .details-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
