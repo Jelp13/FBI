@@ -76,13 +76,14 @@ body {
 }
 
 /* Menú inferior */
+/* Menú inferior */
 .bottom-menu {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
     background-color: #007BFF;
-    display: flex; /* Cambiar a flex para asegurar que sea visible */
+    display: flex;
     justify-content: space-around;
     padding: 20px 0;
     padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 10px);
@@ -323,34 +324,20 @@ img[onerror] {
 }
 
 /* Responsivo */
-/* Luego reemplaza las media queries por estas más específicas */
-@media screen and (max-width: 768px) {
+@media (max-width: 768px) {
     .tab-bar {
-        display: none !important; /* Forzar ocultar la barra superior en móviles */
-    }
-    
-    .bottom-menu {
-        display: flex !important; /* Forzar mostrar menú inferior en móviles */
+        display: none; /* Ocultar la barra superior en móviles */
     }
     
     .wanted-item {
         width: 100%;
         max-width: 350px;
     }
-    
-    /* Añadir padding para compensar el menú inferior */
-    .app-container {
-        padding-bottom: 80px;
-    }
 }
 
-@media screen and (min-width: 769px) {
-    .tab-bar {
-        display: flex !important; /* Forzar mostrar la barra superior en desktop */
-    }
-    
+@media (min-width: 769px) {
     .bottom-menu {
-        display: none !important; /* Forzar ocultar menú inferior en desktop */
+        display: none; /* Ocultar menú inferior en desktop */
     }
     
     .details-grid {
@@ -358,4 +345,3 @@ img[onerror] {
     }
 }
 
-  

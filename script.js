@@ -2,18 +2,11 @@
 window.addEventListener('load', () => {
     setTimeout(() => {
         document.getElementById('splashScreen').style.display = 'none';
-        
-        // Mostrar el contenedor principal
         document.querySelector('.app-container').style.display = 'block';
-        
-        // Aplicar estilos específicos según el tamaño de pantalla
-        checkScreenSize();
-        
-        // Agregar un evento para verificar el tamaño de pantalla al redimensionar
-        window.addEventListener('resize', checkScreenSize);
     }, 2500);
     
- 
+    // Cargar datos automáticamente al iniciar la aplicación
+    loadWantedData();
 });
 
 // Variables globales
