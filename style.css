@@ -87,7 +87,7 @@ body {
     justify-content: space-around;
     padding: 20px 0;
     padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 10px);
-    z-index: 999;
+    z-index: 1000px;
     box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
 }
 
@@ -337,7 +337,7 @@ img[onerror] {
 
 @media (min-width: 769px) {
     .bottom-menu {
-        display: none; /* Ocultar menú inferior en desktop */
+        display: block ; /* Ocultar menú inferior en desktop */
     }
     
     .details-grid {
