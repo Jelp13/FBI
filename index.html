@@ -2,18 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FBI Wanted</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <!-- Splash screen (se ocultará con JS después de unos segundos) -->
     <div id="splashScreen" class="splash-screen">
         <img src="logo.png" alt="Logo" class="logo">
         <h1>FBI Wanted</h1>
     </div>
-
+    
     <!-- Contenedor principal -->
     <div class="app-container" style="display:none;">
         
@@ -26,41 +25,100 @@
             <button class="tab-btn" onclick="showTab('register')">Registro</button>
             <button class="tab-btn" onclick="showTab('about')">Sobre</button>
         </nav>
-
+        
         <!-- Secciones de contenido -->
         <section id="home" class="tab-content active">
             <h2>Bienvenido a FBI Wanted</h2>
-            <p>Explora la información de personas buscadas.</p>
+            <p>Explora la información de personas buscadas por el FBI. Esta aplicación te permite:</p>
+            <ul>
+                <li>Ver la lista completa de personas buscadas</li>
+                <li>Buscar personas específicas</li>
+                <li>Aplicar filtros por oficina o nombre</li>
+                <li>Guardar personas en tu lista de favoritos</li>
+                <li>Ver detalles completos de cada persona</li>
+            </ul>
+            <button onclick="showTab('wanted')">Ver Personas Buscadas</button>
         </section>
-
+        
         <section id="wanted" class="tab-content">
             <h2>Personas Buscadas</h2>
-            <button id="loadDataBtn">Cargar Personas Buscadas</button>
+            <div id="filterOptions">
+                <!-- Los filtros se generarán dinámicamente con JavaScript -->
+            </div>
+            <button id="loadDataBtn">Recargar Datos</button>
             <div id="wantedList" class="wanted-list"></div>
         </section>
-
+        
         <section id="favorites" class="tab-content">
             <h2>Favoritos</h2>
+            <p>Aquí encontrarás las personas que hayas marcado como favoritas.</p>
             <div id="favoritesList"></div>
         </section>
-
+        
         <section id="search" class="tab-content">
             <h2>Buscar Persona</h2>
+            <p>Ingresa al menos 3 caracteres para buscar por nombre:</p>
             <input type="text" id="searchInput" placeholder="Buscar por nombre...">
             <div id="searchResults"></div>
         </section>
-            
-
+        
         <section id="register" class="tab-content">
             <h2>Registro</h2>
-            <!-- Aquí irá el formulario -->
+            <p>Regístrate para recibir alertas sobre nuevas personas buscadas:</p>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Nombre completo:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Correo electrónico:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Intereses (selecciona al menos uno):</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="interest1" value="kidnapping">
+                        <label for="interest1">Secuestros</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="interest2" value="terrorism">
+                        <label for="interest2">Terrorismo</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="interest3" value="fraud">
+                        <label for="interest3">Fraude</label>
+                    </div>
+                </div>
+                <button type="submit">Registrarse</button>
+            </form>
         </section>
-
+        
         <section id="about" class="tab-content">
             <h2>Sobre la App</h2>
-            <p>Esta app consume la API oficial del FBI para mostrar personas buscadas.</p>
+            <p>Esta aplicación consume la API oficial del FBI para mostrar información sobre personas buscadas.</p>
+            <h3>Características:</h3>
+            <ul>
+                <li>Datos obtenidos directamente de la API del FBI</li>
+                <li>Búsqueda y filtrado de personas</li>
+                <li>Guardado de favoritos en almacenamiento local</li>
+                <li>Compartir información sobre personas buscadas</li>
+                <li>Interfaz responsiva para móviles y escritorio</li>
+            </ul>
+            <h3>Tecnologías utilizadas:</h3>
+            <ul>
+                <li>HTML5</li>
+                <li>CSS3</li>
+                <li>JavaScript (ES6+)</li>
+                <li>LocalStorage para persistencia de datos</li>
+                <li>Fetch API para consultas</li>
+            </ul>
+            <p>Versión 1.0 - Desarrollado como proyecto educativo.</p>
         </section>
-
+        
         <!-- Menú inferior -->
         <nav class="bottom-menu">
             <button onclick="showTab('home')">🏠 Inicio</button>
@@ -68,7 +126,6 @@
             <button onclick="showTab('favorites')">⭐ Favoritos</button>
             <button onclick="showTab('register')">👤 Perfil</button>
         </nav>
-
     </div>
 
     <script src="script.js"></script>
