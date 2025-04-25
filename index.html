@@ -119,14 +119,17 @@
             <p>Versión 1.0 - Desarrollado como proyecto educativo.</p>
         </section>
         
-        <!-- Menú inferior -->
-        <nav class="bottom-menu">
-            <button onclick="showTab('home')">🏠 Inicio</button>
-            <button onclick="showTab('search')">🔍 Buscar</button>
-            <button onclick="showTab('favorites')">⭐ Favoritos</button>
-            <button onclick="showTab('register')">👤 Perfil</button>
-        </nav>
-    </div>
+        <div class="app-container" style="display:none;">
+            <!-- Todas tus secciones y pestañas... -->
+            
+            <!-- Menú inferior - asegúrate de que está aquí al final del app-container -->
+            <nav class="bottom-menu">
+                <button onclick="showTab('home')">🏠 Inicio</button>
+                <button onclick="showTab('search')">🔍 Buscar</button>
+                <button onclick="showTab('favorites')">⭐ Favoritos</button>
+                <button onclick="showTab('register')">👤 Perfil</button>
+            </nav>
+        </div>
 
     <script src="script.js"></script>
 </body>

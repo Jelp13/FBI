@@ -2,7 +2,15 @@
 window.addEventListener('load', () => {
     setTimeout(() => {
         document.getElementById('splashScreen').style.display = 'none';
+        
+        // Mostrar el contenedor principal
         document.querySelector('.app-container').style.display = 'block';
+        
+        // Aplicar estilos específicos según el tamaño de pantalla
+        checkScreenSize();
+        
+        // Agregar un evento para verificar el tamaño de pantalla al redimensionar
+        window.addEventListener('resize', checkScreenSize);
     }, 2500);
     
     // Cargar datos automáticamente al iniciar la aplicación
@@ -492,4 +500,22 @@ document.getElementById('registerForm')?.addEventListener('submit', function(e) 
     
     alert(`Gracias, ${name}. Tu registro ha sido recibido en ${email}. Esta es una simulación, no se ha enviado información real.`);
     this.reset();
+});
+// Forzar la visualización del menú inferior en móviles
+document.addEventListener('DOMContentLoaded', function() {
+    // Ejecutar inmediatamente
+    checkForMobileMenu();
+    
+    // Y también verificar periódicamente
+    setInterval(checkForMobileMenu, 1000);
+    
+    function checkForMobileMenu() {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const bottomMenu = document.querySelector('.bottom-menu');
+            if (bottomMenu) {
+                bottomMenu.setAttribute('style', 'display: flex !important; visibility: visible !important; opacity: 1 !important; z-index: 9999 !important;');
+            }
+        }
+    }
 });
