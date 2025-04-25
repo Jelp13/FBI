@@ -13,8 +13,7 @@ window.addEventListener('load', () => {
         window.addEventListener('resize', checkScreenSize);
     }, 2500);
     
-    // Cargar datos automáticamente al iniciar la aplicación
-    loadWantedData();
+ 
 });
 
 // Variables globales
