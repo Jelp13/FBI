@@ -29,6 +29,11 @@ body {
     animation: pulse 1.5s infinite alternate;
 }
 
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
 
 /* Pestañas superiores */
 .tab-bar {
@@ -309,3 +314,39 @@ img[onerror] {
 }
 
 
+/* Luego reemplaza las media queries por estas más específicas */
+@media screen and (max-width: 768px) {
+    .tab-bar {
+        display: none !important; /* Forzar ocultar la barra superior en móviles */
+    }
+    
+    .bottom-menu {
+        display: flex !important; /* Forzar mostrar menú inferior en móviles */
+    }
+    
+    .wanted-item {
+        width: 100%;
+        max-width: 350px;
+    }
+    
+    /* Añadir padding para compensar el menú inferior */
+    .app-container {
+        padding-bottom: 80px;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .tab-bar {
+        display: flex !important; /* Forzar mostrar la barra superior en desktop */
+    }
+    
+    .bottom-menu {
+        display: none !important; /* Forzar ocultar menú inferior en desktop */
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+  
