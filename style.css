@@ -326,7 +326,7 @@ img[onerror] {
 /* Responsivo */
 @media (max-width: 768px) {
     .tab-bar {
-        display: none; /* Ocultar la barra superior en móviles */
+        display: block; /* Ocultar la barra superior en móviles */
     }
     
     .wanted-item {
