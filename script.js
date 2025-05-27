@@ -894,3 +894,191 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// Script de diagnóstico PWA - Agregar al final de script.js o crear archivo separado
+
+// Función para diagnosticar PWA
+function diagnosticPWA() {
+    console.log('🔍 DIAGNÓSTICO PWA');
+    console.log('================');
+    
+    // 1. Verificar HTTPS
+    console.log('1. Protocolo:', window.location.protocol);
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        console.error('❌ ERROR: Se requiere HTTPS para PWA');
+        alert('⚠️ HTTPS requerido: Las PWA necesitan HTTPS para funcionar (excepto en localhost)');
+    } else {
+        console.log('✅ Protocolo correcto');
+    }
+    
+    // 2. Verificar Service Worker
+    if ('serviceWorker' in navigator) {
+        console.log('✅ Service Worker soportado');
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            console.log('2. Service Workers registrados:', registrations.length);
+            registrations.forEach((registration, i) => {
+                console.log(`   SW ${i+1}:`, registration.scope);
+            });
+        });
+    } else {
+        console.error('❌ Service Worker no soportado');
+    }
+    
+    // 3. Verificar Manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    console.log('3. Manifest link:', manifestLink ? '✅ Encontrado' : '❌ No encontrado');
+    
+    if (manifestLink) {
+        fetch(manifestLink.href)
+            .then(response => response.json())
+            .then(manifest => {
+                console.log('✅ Manifest cargado:', manifest);
+                
+                // Verificar campos críticos
+                const requiredFields = ['name', 'short_name', 'start_url', 'display', 'icons'];
+                requiredFields.forEach(field => {
+                    if (manifest[field]) {
+                        console.log(`   ✅ ${field}:`, manifest[field]);
+                    } else {
+                        console.error(`   ❌ Falta ${field}`);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error cargando manifest:', error);
+            });
+    }
+    
+    // 4. Verificar evento beforeinstallprompt
+    let installPromptFired = false;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        installPromptFired = true;
+        console.log('✅ Evento beforeinstallprompt disparado');
+    });
+    
+    setTimeout(() => {
+        if (!installPromptFired) {
+            console.warn('⚠️ Evento beforeinstallprompt no disparado después de 5 segundos');
+            console.log('Posibles razones:');
+            console.log('- La PWA ya está instalada');
+            console.log('- No cumple criterios de instalación');
+            console.log('- Navegador no compatible');
+        }
+    }, 5000);
+    
+    // 5. Verificar si ya está instalada
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('✅ PWA ya está instalada y ejecutándose en modo standalone');
+        alert('🎉 ¡La PWA ya está instalada! Estás ejecutando la versión instalada.');
+    }
+    
+    // 6. Verificar criterios de instalación
+    setTimeout(() => {
+        console.log('📋 CRITERIOS DE INSTALACIÓN:');
+        console.log('- ✅ Manifest válido');
+        console.log('- ✅ Service Worker registrado');
+        console.log('- ✅ Servido por HTTPS');
+        console.log('- ⏳ Verificando engagement del usuario...');
+    }, 2000);
+}
+
+// Función para forzar mostrar opción de instalación
+function showInstallOption() {
+    console.log('🔧 Intentando mostrar opción de instalación...');
+    
+    // Crear botón de instalación manual
+    const installButton = document.createElement('button');
+    installButton.textContent = '📱 Instalar PWA';
+    installButton.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 10000;
+        background: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    `;
+    
+    installButton.addEventListener('click', () => {
+        // Verificar si hay deferredPrompt disponible
+        if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            window.deferredPrompt.userChoice.then((choiceResult) => {
+                console.log('Resultado de instalación:', choiceResult.outcome);
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('✅ Usuario aceptó la instalación');
+                    alert('🎉 ¡Instalación iniciada!');
+                } else {
+                    console.log('❌ Usuario rechazó la instalación');
+                }
+                window.deferredPrompt = null;
+            });
+        } else {
+            // Mostrar instrucciones manuales
+            showManualInstallInstructions();
+        }
+    });
+    
+    document.body.appendChild(installButton);
+    
+    // Auto-remover después de 30 segundos
+    setTimeout(() => {
+        if (installButton.parentNode) {
+            installButton.parentNode.removeChild(installButton);
+        }
+    }, 30000);
+}
+
+// Mostrar instrucciones manuales
+function showManualInstallInstructions() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    let instructions = '';
+    
+    if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+        instructions = `
+📱 CHROME - Para instalar:
+1. Menú (⋮) → "Instalar FBI Wanted"
+2. O busca el ícono + en la barra de direcciones
+        `;
+    } else if (userAgent.includes('edg')) {
+        instructions = `
+📱 EDGE - Para instalar:
+1. Menú (...) → "Aplicaciones" → "Instalar este sitio como aplicación"
+2. O busca el ícono + en la barra de direcciones
+        `;
+    } else if (userAgent.includes('safari')) {
+        instructions = `
+📱 SAFARI - Para añadir a pantalla de inicio:
+1. Botón Compartir 📤
+2. "Añadir a pantalla de inicio"
+3. Confirmar nombre
+        `;
+    } else {
+        instructions = `
+📱 INSTALACIÓN MANUAL:
+1. Busca en el menú del navegador la opción "Instalar" o "Añadir a pantalla de inicio"
+2. O busca un ícono + en la barra de direcciones
+        `;
+    }
+    
+    alert(instructions);
+}
+
+// Ejecutar diagnóstico automáticamente
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Iniciando diagnóstico PWA...');
+    diagnosticPWA();
+    
+    // Mostrar botón de instalación después de 3 segundos
+    setTimeout(() => {
+        showInstallOption();
+    }, 3000);
+});
+
+// Hacer funciones disponibles globalmente para debugging manual
+window.diagnosticPWA = diagnosticPWA;
+window.showInstallOption = showInstallOption;

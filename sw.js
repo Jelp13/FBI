@@ -2,15 +2,16 @@ const CACHE_NAME = 'fbi-wanted-v1.0.0';
 const STATIC_CACHE = 'fbi-wanted-static-v1.0.0';
 const DYNAMIC_CACHE = 'fbi-wanted-dynamic-v1.0.0';
 
+// Base path para GitHub Pages
+const BASE_PATH = '/FBI';
+
 // Archivos que se almacenarán en caché para funcionamiento offline
 const STATIC_FILES = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/style.css`,
+  `${BASE_PATH}/script.js`,
+  `${BASE_PATH}/manifest.json`,
   'https://via.placeholder.com/250?text=No+Image',
   'https://via.placeholder.com/250?text=Error+Image'
 ];
@@ -79,7 +80,8 @@ self.addEventListener('fetch', event => {
   if (request.destination === 'document' || 
       request.destination === 'script' || 
       request.destination === 'style' ||
-      request.destination === 'image') {
+      request.destination === 'image' ||
+      request.destination === 'manifest') {
     event.respondWith(handleStaticRequest(request));
     return;
   }
@@ -157,7 +159,7 @@ async function handleStaticRequest(request) {
     
     // Fallback para páginas HTML
     if (request.destination === 'document') {
-      return caches.match('/index.html');
+      return caches.match(`${BASE_PATH}/index.html`);
     }
     
     // Para otros recursos, devolver error
@@ -174,22 +176,20 @@ self.addEventListener('push', event => {
   
   const options = {
     body: event.data ? event.data.text() : 'Nueva persona buscada disponible',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: 'https://via.placeholder.com/192x192/00285e/ffffff?text=FBI',
+    badge: 'https://via.placeholder.com/72x72/00285e/ffffff?text=FBI',
     vibrate: [200, 100, 200],
     data: {
-      url: '/?tab=wanted'
+      url: `${BASE_PATH}/?tab=wanted`
     },
     actions: [
       {
         action: 'view',
-        title: 'Ver detalles',
-        icon: '/icons/icon-96x96.png'
+        title: 'Ver detalles'
       },
       {
         action: 'close',
-        title: 'Cerrar',
-        icon: '/icons/icon-96x96.png'
+        title: 'Cerrar'
       }
     ]
   };
@@ -207,7 +207,7 @@ self.addEventListener('notificationclick', event => {
   
   if (event.action === 'view') {
     event.waitUntil(
-      clients.openWindow(event.notification.data.url || '/')
+      clients.openWindow(event.notification.data.url || `${BASE_PATH}/`)
     );
   }
 });
@@ -237,14 +237,3 @@ async function syncData() {
     console.error('Service Worker: Error durante la sincronización:', error);
   }
 }
-
-// Limpiar cachés antiguas periódicamente
-setInterval(() => {
-  caches.keys().then(cacheNames => {
-    cacheNames.forEach(cacheName => {
-      if (cacheName.includes('v1.0.0') === false) {
-        caches.delete(cacheName);
-      }
-    });
-  });
-}, 24 * 60 * 60 * 1000); // Cada 24 horas

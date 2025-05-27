@@ -2,77 +2,61 @@
   "name": "FBI Wanted - Personas Buscadas",
   "short_name": "FBI Wanted",
   "description": "Aplicación para consultar personas buscadas por el FBI",
-  "start_url": "/",
+  "start_url": "/FBI/",
+  "scope": "/FBI/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00285e",
   "orientation": "portrait-primary",
-  "scope": "/",
   "lang": "es",
   "icons": [
     {
-      "src": "icons/icon-72x72.png",
+      "src": "https://via.placeholder.com/72x72/00285e/ffffff?text=FBI",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-96x96.png",
+      "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=FBI",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-128x128.png",
+      "src": "https://via.placeholder.com/128x128/00285e/ffffff?text=FBI",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-144x144.png",
+      "src": "https://via.placeholder.com/144x144/00285e/ffffff?text=FBI",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-152x152.png",
+      "src": "https://via.placeholder.com/152x152/00285e/ffffff?text=FBI",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-192x192.png",
+      "src": "https://via.placeholder.com/192x192/00285e/ffffff?text=FBI",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-384x384.png",
+      "src": "https://via.placeholder.com/384x384/00285e/ffffff?text=FBI",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "https://via.placeholder.com/512x512/00285e/ffffff?text=FBI",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/desktop-1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Vista principal de la aplicación"
-    },
-    {
-      "src": "screenshots/mobile-1.png",
-      "sizes": "375x812",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Vista móvil de personas buscadas"
     }
   ],
   "categories": ["news", "government", "security"],
@@ -81,22 +65,22 @@
       "name": "Ver Buscados",
       "short_name": "Buscados",
       "description": "Ver lista de personas buscadas",
-      "url": "/?tab=wanted",
+      "url": "/FBI/?tab=wanted",
       "icons": [
         {
-          "src": "icons/icon-96x96.png",
+          "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=B",
           "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "Buscar Persona",
+      "name": "Buscar Persona", 
       "short_name": "Buscar",
       "description": "Buscar persona específica",
-      "url": "/?tab=search",
+      "url": "/FBI/?tab=search",
       "icons": [
         {
-          "src": "icons/icon-96x96.png",
+          "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=S",
           "sizes": "96x96"
         }
       ]
