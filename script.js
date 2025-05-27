@@ -1216,3 +1216,334 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 2000);
 });
+
+// ============ SOLUCIÓN PARA CODESPACES ============
+// Agregar al final de script.js
+
+// Override para manejar Codespaces
+function setupCodespacesPWA() {
+    console.log('🔧 Configurando PWA para Codespaces...');
+    
+    // 1. Crear botón de instalación siempre visible
+    createPermanentInstallButton();
+    
+    // 2. Verificar si ya está instalada
+    checkIfInstalled();
+    
+    // 3. Configurar instalación manual
+    setupManualInstallation();
+    
+    // 4. Mostrar banner personalizado después de 3 segundos
+    setTimeout(() => {
+        if (!isInstalled()) {
+            showCodespacesBanner();
+        }
+    }, 3000);
+}
+
+// Crear botón permanente de instalación
+function createPermanentInstallButton() {
+    // Remover botón existente si existe
+    const existingBtn = document.getElementById('permanentInstallBtn');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
+    
+    const installBtn = document.createElement('button');
+    installBtn.id = 'permanentInstallBtn';
+    installBtn.innerHTML = '📱 Instalar como App';
+    installBtn.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 9999;
+        background: linear-gradient(135deg, #007BFF, #0056b3);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        font-size: 14px;
+        transition: all 0.3s ease;
+        animation: pulse 2s infinite;
+    `;
+    
+    // Agregar animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        #permanentInstallBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        }
+    `;
+    document.head.appendChild(style);
+    
+    installBtn.addEventListener('click', () => {
+        handleInstallClick();
+    });
+    
+    document.body.appendChild(installBtn);
+    
+    // Auto-ocultar después de 30 segundos
+    setTimeout(() => {
+        if (installBtn && installBtn.parentNode) {
+            installBtn.style.animation = 'none';
+            installBtn.style.opacity = '0.7';
+        }
+    }, 30000);
+}
+
+// Verificar si ya está instalada
+function checkIfInstalled() {
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('✅ PWA ya instalada y ejecutándose');
+        hideInstallButtons();
+        return true;
+    }
+    return false;
+}
+
+function isInstalled() {
+    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+}
+
+// Ocultar botones de instalación
+function hideInstallButtons() {
+    const buttons = ['permanentInstallBtn', 'installBanner', 'manualInstallBtn'];
+    buttons.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+}
+
+// Manejar click de instalación
+function handleInstallClick() {
+    console.log('🎯 Intento de instalación iniciado...');
+    
+    // Si hay deferredPrompt disponible, usarlo
+    if (window.deferredPrompt) {
+        console.log('✅ Usando deferredPrompt...');
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            console.log('Resultado:', choiceResult.outcome);
+            if (choiceResult.outcome === 'accepted') {
+                showNotification('🎉 ¡Instalación iniciada!');
+            }
+            window.deferredPrompt = null;
+        });
+    } else {
+        // Mostrar instrucciones manuales
+        showCodespacesInstallInstructions();
+    }
+}
+
+// Mostrar banner personalizado para Codespaces
+function showCodespacesBanner() {
+    const existingBanner = document.getElementById('codespacesInstallBanner');
+    if (existingBanner) {
+        existingBanner.remove();
+    }
+    
+    const banner = document.createElement('div');
+    banner.id = 'codespacesInstallBanner';
+    banner.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        z-index: 9998;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        animation: slideDown 0.5s ease;
+    `;
+    
+    banner.innerHTML = `
+        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <span style="font-weight: bold;">📱 ¡Esta app se puede instalar en tu dispositivo!</span>
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <button onclick="handleInstallClick()" style="background: white; color: #28a745; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold;">
+                    Instalar
+                </button>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="background: transparent; color: white; border: 2px solid white; padding: 8px 16px; border-radius: 20px; cursor: pointer;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Auto-remover después de 15 segundos
+    setTimeout(() => {
+        if (banner && banner.parentNode) {
+            banner.style.animation = 'slideUp 0.5s ease';
+            setTimeout(() => {
+                if (banner.parentNode) {
+                    banner.parentNode.removeChild(banner);
+                }
+            }, 500);
+        }
+    }, 15000);
+}
+
+// Instrucciones específicas para Codespaces
+function showCodespacesInstallInstructions() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; margin: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 style="color: #00285e; margin-top: 0;">📱 Instalar FBI Wanted</h2>
+            
+            <h3 style="color: #007BFF;">🖥️ En Escritorio:</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <strong>Chrome:</strong><br>
+                • Menú ⋮ → "Instalar FBI Wanted"<br>
+                • O busca el ícono + en la barra de direcciones
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <strong>Edge:</strong><br>
+                • Menú ... → "Aplicaciones" → "Instalar este sitio como aplicación"
+            </div>
+            
+            <h3 style="color: #007BFF;">📱 En Móvil:</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <strong>Android (Chrome):</strong><br>
+                • Menú ⋮ → "Añadir a pantalla de inicio"<br>
+                • O "Instalar aplicación"
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <strong>⚠️ Nota sobre Codespaces:</strong><br>
+                Algunas funciones PWA pueden estar limitadas en el entorno de desarrollo de GitHub Codespaces.
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                        style="background: #007BFF; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Cerrar al hacer click fuera
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Configurar instalación manual mejorada
+function setupManualInstallation() {
+    // Actualizar el botón existente en la página
+    const manualBtn = document.getElementById('manualInstallBtn');
+    if (manualBtn) {
+        manualBtn.style.display = 'block';
+        manualBtn.innerHTML = '📲 Ver instrucciones de instalación';
+        manualBtn.onclick = () => {
+            showCodespacesInstallInstructions();
+        };
+    }
+}
+
+// Función para hacer la PWA más "instalable"
+function improvePWAScore() {
+    // Agregar meta tags adicionales si no existen
+    const metaTags = [
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'msapplication-TileColor', content: '#00285e' }
+    ];
+    
+    metaTags.forEach(tag => {
+        if (!document.querySelector(`meta[name="${tag.name}"]`)) {
+            const meta = document.createElement('meta');
+            meta.name = tag.name;
+            meta.content = tag.content;
+            document.head.appendChild(meta);
+        }
+    });
+    
+    console.log('✅ Meta tags PWA agregados');
+}
+
+// Monitorear el evento beforeinstallprompt con timeout extendido
+let installPromptTimeout;
+function monitorInstallPrompt() {
+    let promptFired = false;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('🎉 ¡beforeinstallprompt disparado!');
+        e.preventDefault();
+        window.deferredPrompt = e;
+        promptFired = true;
+        
+        // Ocultar botón permanente y mostrar el banner original
+        const permanentBtn = document.getElementById('permanentInstallBtn');
+        const installBanner = document.getElementById('installBanner');
+        
+        if (permanentBtn) permanentBtn.style.display = 'none';
+        if (installBanner) {
+            installBanner.style.display = 'block';
+            showInstallBanner();
+        }
+        
+        clearTimeout(installPromptTimeout);
+    });
+    
+    // Timeout más largo para Codespaces
+    installPromptTimeout = setTimeout(() => {
+        if (!promptFired) {
+            console.log('⚠️ beforeinstallprompt no detectado - usando instalación manual');
+            // El botón permanente ya está visible, no hacer nada adicional
+        }
+    }, 10000); // 10 segundos
+}
+
+// Auto-inicializar cuando detecte Codespaces
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hostname.includes('.app.github.dev')) {
+        console.log('🚧 Codespaces detectado - inicializando PWA personalizada...');
+        
+        // Esperar un poco para que cargue todo
+        setTimeout(() => {
+            setupCodespacesPWA();
+            improvePWAScore();
+            monitorInstallPrompt();
+        }, 1000);
+    }
+});
+
+// Hacer funciones disponibles globalmente
+window.handleInstallClick = handleInstallClick;
+window.showCodespacesInstallInstructions = showCodespacesInstallInstructions;
