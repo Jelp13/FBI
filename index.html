@@ -4,13 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FBI Wanted</title>
+    
+    <!-- Meta tags para PWA -->
+    <meta name="description" content="Aplicación para consultar personas buscadas por el FBI">
+    <meta name="theme-color" content="#00285e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FBI Wanted">
+    <meta name="msapplication-TileColor" content="#00285e">
+    
+    <!-- Iconos usando placeholders (temporales) 
+    <link rel="icon" type="image/png" sizes="32x32" href="https://via.placeholder.com/32x32/00285e/ffffff?text=FBI">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://via.placeholder.com/16x16/00285e/ffffff?text=FBI">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://via.placeholder.com/180x180/00285e/ffffff?text=FBI">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/180x180/00285e/ffffff?text=FBI">-->
+    
+    <!-- Manifiesto PWA -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Estilos -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Splash screen (se ocultará con JS después de unos segundos) -->
+    <!-- Banner de instalación PWA -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="install-content">
+            <span>📱 ¿Instalar FBI Wanted en tu dispositivo?</span>
+            <div class="install-buttons">
+                <button id="installBtn">Instalar</button>
+                <button id="dismissBtn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estado de conexión -->
+    <div id="connectionStatus" class="connection-status" style="display: none;">
+        <span id="connectionText">Sin conexión - Modo offline</span>
+    </div>
+    
+    <!-- Splash screen (cambié logo.png por placeholder) -->
     <div id="splashScreen" class="splash-screen">
-        <img src="logo.png" alt="Logo" class="logo">
+        <img src="https://via.placeholder.com/120x120/00285e/ffffff?text=FBI" alt="Logo FBI" class="logo">
         <h1>FBI Wanted</h1>
+        <div class="loading-spinner"></div>
     </div>
     
     <!-- Contenedor principal -->
@@ -28,7 +65,7 @@
         
         <!-- Secciones de contenido -->
         <section id="home" class="tab-content active">
-            <h2>Bienvenido a FBI Wanted</h2>
+            <h2>🔍 Bienvenido a FBI Wanted</h2>
             <p>Explora la información de personas buscadas por el FBI. Esta aplicación te permite:</p>
             <ul>
                 <li>Ver la lista completa de personas buscadas</li>
@@ -36,34 +73,53 @@
                 <li>Aplicar filtros por oficina o nombre</li>
                 <li>Guardar personas en tu lista de favoritos</li>
                 <li>Ver detalles completos de cada persona</li>
+                <li>🆕 Funciona sin conexión a internet</li>
+                <li>🆕 Se puede instalar como aplicación nativa</li>
             </ul>
-            <button onclick="showTab('wanted')">Ver Personas Buscadas</button>
+            <button onclick="showTab('wanted')" class="main-cta-btn">🔍 Ver Personas Buscadas</button>
+            
+            <!-- Información PWA -->
+            <div class="pwa-info">
+                <h3>📱 Aplicación Web Progresiva</h3>
+                <p>Esta aplicación puede instalarse en tu dispositivo para una experiencia nativa:</p>
+                <ul>
+                    <li>✅ Funciona sin conexión</li>
+                    <li>🔄 Actualizaciones automáticas</li>
+                    <li>🏠 Acceso directo desde tu pantalla de inicio</li>
+                    <li>🔔 Notificaciones (próximamente)</li>
+                </ul>
+                
+                <!-- Botón de instalación manual -->
+                <button id="manualInstallBtn" class="install-manual-btn" style="display: none;">
+                    📲 Instalar Aplicación
+                </button>
+            </div>
         </section>
         
         <section id="wanted" class="tab-content">
-            <h2>Personas Buscadas</h2>
+            <h2>👤 Personas Buscadas</h2>
             <div id="filterOptions">
                 <!-- Los filtros se generarán dinámicamente con JavaScript -->
             </div>
-            <button id="loadDataBtn">Recargar Datos</button>
+            <button id="loadDataBtn">🔄 Recargar Datos</button>
             <div id="wantedList" class="wanted-list"></div>
         </section>
         
         <section id="favorites" class="tab-content">
-            <h2>Favoritos</h2>
+            <h2>⭐ Favoritos</h2>
             <p>Aquí encontrarás las personas que hayas marcado como favoritas.</p>
             <div id="favoritesList"></div>
         </section>
         
         <section id="search" class="tab-content">
-            <h2>Buscar Persona</h2>
+            <h2>🔍 Buscar Persona</h2>
             <p>Ingresa al menos 3 caracteres para buscar por nombre:</p>
             <input type="text" id="searchInput" placeholder="Buscar por nombre...">
             <div id="searchResults"></div>
         </section>
         
         <section id="register" class="tab-content">
-            <h2>Registro</h2>
+            <h2>📝 Registro</h2>
             <p>Regístrate para recibir alertas sobre nuevas personas buscadas:</p>
             <form id="registerForm">
                 <div class="form-group">
@@ -98,25 +154,39 @@
         </section>
         
         <section id="about" class="tab-content">
-            <h2>Sobre la App</h2>
+            <h2>ℹ️ Sobre la App</h2>
             <p>Esta aplicación consume la API oficial del FBI para mostrar información sobre personas buscadas.</p>
             <h3>Características:</h3>
             <ul>
-                <li>Datos obtenidos directamente de la API del FBI</li>
-                <li>Búsqueda y filtrado de personas</li>
-                <li>Guardado de favoritos en almacenamiento local</li>
-                <li>Compartir información sobre personas buscadas</li>
-                <li>Interfaz responsiva para móviles y escritorio</li>
+                <li>📡 Datos obtenidos directamente de la API del FBI</li>
+                <li>🔍 Búsqueda y filtrado de personas</li>
+                <li>💾 Guardado de favoritos en almacenamiento local</li>
+                <li>📤 Compartir información sobre personas buscadas</li>
+                <li>📱 Interfaz responsiva para móviles y escritorio</li>
+                <li>🚫 Funcionalidad offline con Service Workers</li>
+                <li>📲 Instalable como PWA</li>
+                <li>⚡ Caché inteligente para mejor rendimiento</li>
             </ul>
             <h3>Tecnologías utilizadas:</h3>
             <ul>
                 <li>HTML5</li>
                 <li>CSS3</li>
                 <li>JavaScript (ES6+)</li>
+                <li>Service Workers</li>
+                <li>Web App Manifest</li>
+                <li>Cache API</li>
                 <li>LocalStorage para persistencia de datos</li>
                 <li>Fetch API para consultas</li>
             </ul>
-            <p>Versión 1.0 - Desarrollado como proyecto educativo.</p>
+            <p><strong>Versión 2.0</strong> - PWA con funcionalidad offline.</p>
+            
+            <!-- Información del Service Worker -->
+            <div class="sw-info">
+                <h4>📊 Estado del Service Worker:</h4>
+                <p id="swStatus">Verificando...</p>
+                <button id="updateBtn" style="display: none;">🔄 Actualizar Aplicación</button>
+                <button id="debugBtn" onclick="runPWADiagnostic()">🔧 Ejecutar Diagnóstico</button>
+            </div>
         </section>
         
         <!-- Menú inferior -->
