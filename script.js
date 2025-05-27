@@ -1082,3 +1082,137 @@ document.addEventListener('DOMContentLoaded', () => {
 // Hacer funciones disponibles globalmente para debugging manual
 window.diagnosticPWA = diagnosticPWA;
 window.showInstallOption = showInstallOption;
+
+// Debugging temporal
+console.log('🔍 Debug PWA:', {
+    protocol: window.location.protocol,
+    host: window.location.host,
+    pathname: window.location.pathname
+});
+
+// Verificar Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+        .then(regs => console.log('SW registrados:', regs.length));
+}
+
+// Verificar Manifest
+fetch('./manifest.json')
+    .then(r => r.json())
+    .then(manifest => console.log('✅ Manifest:', manifest))
+    .catch(e => console.error('❌ Error manifest:', e));
+
+    // Función de diagnóstico específica para Codespaces
+function runPWADiagnostic() {
+    console.clear();
+    console.log('🔍 DIAGNÓSTICO PWA PARA CODESPACES');
+    console.log('=================================');
+    
+    // 1. Verificar entorno
+    console.log('1. 🌐 Entorno:', {
+        url: window.location.href,
+        protocol: window.location.protocol,
+        isCodespaces: window.location.hostname.includes('.app.github.dev'),
+        isHTTPS: window.location.protocol === 'https:'
+    });
+    
+    // 2. Verificar Service Worker
+    if ('serviceWorker' in navigator) {
+        console.log('2. ✅ Service Worker soportado');
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            console.log(`   📊 Service Workers activos: ${registrations.length}`);
+            registrations.forEach((reg, i) => {
+                console.log(`   SW ${i+1}: ${reg.scope}`);
+                console.log(`   Estado: ${reg.active ? 'activo' : 'inactivo'}`);
+            });
+        });
+        
+        // Estado del SW actual
+        console.log('   🔧 Estado actual:', navigator.serviceWorker.controller ? 'Controlado' : 'No controlado');
+    } else {
+        console.log('2. ❌ Service Worker no soportado');
+    }
+    
+    // 3. Verificar Manifest
+    fetch('./manifest.json')
+        .then(response => {
+            console.log('3. ✅ Manifest accesible');
+            return response.json();
+        })
+        .then(manifest => {
+            console.log('   📋 Contenido del manifest:', manifest);
+        })
+        .catch(error => {
+            console.log('3. ❌ Error con manifest:', error);
+        });
+    
+    // 4. Verificar criterios PWA
+    setTimeout(() => {
+        console.log('4. 📋 CRITERIOS PWA:');
+        console.log('   ✅ HTTPS:', window.location.protocol === 'https:');
+        console.log('   ✅ Service Worker:', 'serviceWorker' in navigator);
+        console.log('   🔄 Manifest: verificando...');
+        console.log('   ⚠️ Codespaces: entorno especial detectado');
+    }, 1000);
+}
+
+// Botón de instalación manual mejorado
+function setupManualInstall() {
+    const manualBtn = document.getElementById('manualInstallBtn');
+    if (manualBtn) {
+        manualBtn.style.display = 'block';
+        manualBtn.addEventListener('click', () => {
+            showManualInstallInstructions();
+        });
+    }
+}
+
+function showManualInstallInstructions() {
+    const isCodespaces = window.location.hostname.includes('.app.github.dev');
+    
+    let message = '';
+    if (isCodespaces) {
+        message = `
+🚧 CODESPACES DETECTADO
+
+Para instalar en Codespaces:
+
+📱 CHROME:
+1. Menú ⋮ → "Instalar FBI Wanted"
+2. O busca el ícono + en la barra de direcciones
+
+📱 EDGE:
+1. Menú ... → "Aplicaciones" → "Instalar este sitio como aplicación"
+
+⚠️ NOTA: En Codespaces algunas funciones PWA pueden estar limitadas.
+Para mejor experiencia, despliega en GitHub Pages o Netlify.
+        `;
+    } else {
+        message = `
+📱 INSTALACIÓN MANUAL:
+
+🖥️ DESKTOP:
+- Chrome: Menú ⋮ → "Instalar FBI Wanted"
+- Edge: Menú ... → "Aplicaciones" → "Instalar este sitio"
+
+📱 MÓVIL:
+- Chrome: Menú ⋮ → "Añadir a pantalla de inicio"
+- Safari: Botón Compartir 📤 → "Añadir a pantalla de inicio"
+        `;
+    }
+    
+    alert(message);
+}
+
+// Inicializar cuando cargue el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    setupManualInstall();
+    
+    // Auto-ejecutar diagnóstico en consola
+    setTimeout(() => {
+        if (window.location.hostname.includes('.app.github.dev')) {
+            console.log('🚧 Entorno Codespaces detectado - ejecutando diagnóstico automático...');
+            runPWADiagnostic();
+        }
+    }, 2000);
+});

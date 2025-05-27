@@ -2,8 +2,8 @@
   "name": "FBI Wanted - Personas Buscadas",
   "short_name": "FBI Wanted",
   "description": "Aplicación para consultar personas buscadas por el FBI",
-  "start_url": "/FBI/",
-  "scope": "/FBI/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00285e",
@@ -14,76 +14,50 @@
       "src": "https://via.placeholder.com/72x72/00285e/ffffff?text=FBI",
       "sizes": "72x72",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=FBI",
       "sizes": "96x96",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/128x128/00285e/ffffff?text=FBI",
       "sizes": "128x128",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/144x144/00285e/ffffff?text=FBI",
       "sizes": "144x144",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/152x152/00285e/ffffff?text=FBI",
       "sizes": "152x152",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/192x192/00285e/ffffff?text=FBI",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/384x384/00285e/ffffff?text=FBI",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "https://via.placeholder.com/512x512/00285e/ffffff?text=FBI",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     }
   ],
-  "categories": ["news", "government", "security"],
-  "shortcuts": [
-    {
-      "name": "Ver Buscados",
-      "short_name": "Buscados",
-      "description": "Ver lista de personas buscadas",
-      "url": "/FBI/?tab=wanted",
-      "icons": [
-        {
-          "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=B",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Buscar Persona", 
-      "short_name": "Buscar",
-      "description": "Buscar persona específica",
-      "url": "/FBI/?tab=search",
-      "icons": [
-        {
-          "src": "https://via.placeholder.com/96x96/00285e/ffffff?text=S",
-          "sizes": "96x96"
-        }
-      ]
-    }
-  ]
+  "categories": ["news", "government", "security"]
 }
