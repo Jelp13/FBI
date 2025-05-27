@@ -745,3 +745,378 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Hacer funciones disponibles globalmente
 window.runPWADiagnostic = runPWADiagnostic;
+
+// ============ MEJORAS PARA MÓVIL ============
+
+// Detectar dispositivo móvil
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Mejorar PWA para móvil
+function setupMobilePWA() {
+    if (!isMobileDevice()) return;
+    
+    console.log('📱 Configurando PWA para móvil...');
+    
+    // Crear banner móvil específico
+    createMobileBanner();
+    
+    // Configurar eventos táctiles
+    setupTouchEvents();
+    
+    // Verificar criterios específicos de móvil
+    checkMobilePWACriteria();
+}
+
+// Banner específico para móvil
+function createMobileBanner() {
+    // Esperar un poco para que cargue todo
+    setTimeout(() => {
+        if (isAppAlreadyInstalled()) {
+            console.log('📱 App ya instalada en móvil');
+            return;
+        }
+        
+        const mobileBanner = document.createElement('div');
+        mobileBanner.id = 'mobilePWABanner';
+        mobileBanner.style.cssText = `
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #007BFF, #0056b3);
+            color: white;
+            padding: 15px;
+            z-index: 9999;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        `;
+        
+        mobileBanner.innerHTML = `
+            <div style="margin-bottom: 10px;">
+                <strong>📱 ¡Instala FBI Wanted!</strong><br>
+                <small>Acceso rápido desde tu pantalla de inicio</small>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="mobileInstallBtn" style="
+                    background: white;
+                    color: #007BFF;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    cursor: pointer;
+                ">Instalar</button>
+                <button id="mobileDismissBtn" style="
+                    background: transparent;
+                    color: white;
+                    border: 2px solid white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                ">Cerrar</button>
+            </div>
+        `;
+        
+        document.body.appendChild(mobileBanner);
+        
+        // Mostrar banner con animación
+        setTimeout(() => {
+            mobileBanner.style.transform = 'translateY(0)';
+        }, 500);
+        
+        // Eventos
+        document.getElementById('mobileInstallBtn').addEventListener('click', handleMobileInstall);
+        document.getElementById('mobileDismissBtn').addEventListener('click', () => {
+            mobileBanner.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+                if (mobileBanner.parentNode) {
+                    mobileBanner.parentNode.removeChild(mobileBanner);
+                }
+            }, 300);
+        });
+        
+        // Auto-ocultar después de 30 segundos
+        setTimeout(() => {
+            if (mobileBanner.parentNode) {
+                mobileBanner.style.transform = 'translateY(100%)';
+            }
+        }, 30000);
+        
+    }, 3000);
+}
+
+// Verificar si la app ya está instalada
+function isAppAlreadyInstalled() {
+    // Verificar si se ejecuta en modo standalone
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+        return true;
+    }
+    
+    // Verificar si se ejecuta desde pantalla de inicio (iOS)
+    if (window.navigator.standalone === true) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Manejar instalación en móvil
+function handleMobileInstall() {
+    console.log('📱 Instalación móvil iniciada...');
+    
+    if (deferredPrompt) {
+        // Usar prompt nativo si está disponible
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            console.log('Resultado móvil:', choiceResult.outcome);
+            if (choiceResult.outcome === 'accepted') {
+                showNotification('🎉 ¡Instalación iniciada!');
+            } else {
+                showMobileInstructions();
+            }
+            deferredPrompt = null;
+        });
+    } else {
+        // Mostrar instrucciones manuales
+        showMobileInstructions();
+    }
+}
+
+// Instrucciones específicas para móvil
+function showMobileInstructions() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    let instructions = '';
+    
+    if (userAgent.includes('android')) {
+        if (userAgent.includes('chrome')) {
+            instructions = `
+📱 ANDROID + CHROME:
+
+1️⃣ Toca el menú (⋮) en la esquina superior derecha
+2️⃣ Busca "Añadir a pantalla de inicio" o "Instalar aplicación"
+3️⃣ Toca "Instalar" o "Añadir"
+4️⃣ ¡Listo! La app aparecerá en tu pantalla de inicio
+
+💡 TIP: Si no ves la opción, prueba:
+• Recargar la página
+• Usar el navegador Chrome actualizado
+• Verificar que tengas espacio en tu dispositivo
+            `;
+        } else {
+            instructions = `
+📱 ANDROID:
+
+1️⃣ Abre esta página en Google Chrome
+2️⃣ Menú (⋮) → "Añadir a pantalla de inicio"
+3️⃣ Confirma la instalación
+
+Chrome es el navegador recomendado para instalar PWAs.
+            `;
+        }
+    } else if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+        instructions = `
+📱 iPhone/iPad + SAFARI:
+
+1️⃣ Toca el botón Compartir 📤 (abajo en el centro)
+2️⃣ Desplázate y busca "Añadir a pantalla de inicio"
+3️⃣ Toca "Añadir" en la esquina superior derecha
+4️⃣ Confirma el nombre de la app
+5️⃣ ¡Listo! La app aparecerá en tu pantalla de inicio
+
+⚠️ IMPORTANTE: Debe usarse Safari, no Chrome en iOS.
+        `;
+    } else {
+        instructions = `
+📱 INSTALACIÓN EN MÓVIL:
+
+🤖 ANDROID:
+• Chrome: Menú → "Añadir a pantalla de inicio"
+• Otros navegadores: Usar Chrome
+
+🍎 iOS:
+• Safari: Botón Compartir → "Añadir a pantalla de inicio"
+• No funciona en Chrome iOS
+        `;
+    }
+    
+    // Crear modal con instrucciones
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        ">
+            <button id="closeModal" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+            ">&times;</button>
+            
+            <h2 style="color: #007BFF; margin-top: 0; text-align: center;">
+                📱 Cómo Instalar
+            </h2>
+            
+            <div style="
+                white-space: pre-line;
+                line-height: 1.5;
+                font-size: 14px;
+                color: #333;
+            ">${instructions}</div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                    background: #007BFF;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    cursor: pointer;
+                ">Entendido</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Cerrar modal
+    modal.querySelector('#closeModal').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Configurar eventos táctiles para mejor experiencia móvil
+function setupTouchEvents() {
+    // Mejorar la experiencia táctil de los botones
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        
+        button.addEventListener('touchend', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+}
+
+// Verificar criterios específicos de PWA en móvil
+function checkMobilePWACriteria() {
+    console.log('📱 Verificando criterios PWA móvil...');
+    
+    // Verificar que los meta tags estén presentes
+    const requiredMetas = [
+        'viewport',
+        'theme-color',
+        'mobile-web-app-capable'
+    ];
+    
+    requiredMetas.forEach(metaName => {
+        const meta = document.querySelector(`meta[name="${metaName}"]`);
+        console.log(`📱 Meta ${metaName}:`, meta ? '✅' : '❌');
+    });
+    
+    // Verificar manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    console.log('📱 Manifest link:', manifestLink ? '✅' : '❌');
+    
+    // Verificar Service Worker
+    console.log('📱 Service Worker:', 'serviceWorker' in navigator ? '✅' : '❌');
+    
+    // Verificar HTTPS
+    console.log('📱 HTTPS:', window.location.protocol === 'https:' ? '✅' : '❌');
+}
+
+// Mejorar el manifest para móvil
+function addMobileMetas() {
+    const metasToAdd = [
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'FBI Wanted' }
+    ];
+    
+    metasToAdd.forEach(metaData => {
+        if (!document.querySelector(`meta[name="${metaData.name}"]`)) {
+            const meta = document.createElement('meta');
+            meta.name = metaData.name;
+            meta.content = metaData.content;
+            document.head.appendChild(meta);
+            console.log(`📱 Meta agregado: ${metaData.name}`);
+        }
+    });
+}
+
+// Función de debug específica para móvil
+function debugMobilePWA() {
+    console.clear();
+    console.log('📱 DEBUG PWA MÓVIL');
+    console.log('==================');
+    
+    const isMobile = isMobileDevice();
+    console.log('📱 Es móvil:', isMobile ? '✅' : '❌');
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('📱 Standalone (iOS):', window.navigator.standalone);
+    console.log('📱 Display mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+    
+    if (isMobile) {
+        checkMobilePWACriteria();
+    }
+    
+    // Verificar si beforeinstallprompt se disparó
+    setTimeout(() => {
+        console.log('📱 deferredPrompt disponible:', !!deferredPrompt);
+    }, 5000);
+}
+
+// Inicializar mejoras móviles
+document.addEventListener('DOMContentLoaded', () => {
+    if (isMobileDevice()) {
+        console.log('📱 Dispositivo móvil detectado');
+        addMobileMetas();
+        
+        setTimeout(() => {
+            setupMobilePWA();
+        }, 2000);
+    }
+});
+
+// Hacer funciones disponibles globalmente para debug
+window.debugMobilePWA = debugMobilePWA;
+window.showMobileInstructions = showMobileInstructions;
