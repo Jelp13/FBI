@@ -1,228 +1,114 @@
-const CACHE_NAME = 'fbi-wanted-v1.0.1';
-const STATIC_CACHE = 'fbi-wanted-static-v1.0.1';
-const DYNAMIC_CACHE = 'fbi-wanted-dynamic-v1.0.1';
+// Service Worker simplificado para Codespaces
+const CACHE_NAME = 'fbi-wanted-v1.0.3';
 
-// Archivos que se almacenarán en caché para funcionamiento offline
-const STATIC_FILES = [
+const FILES_TO_CACHE = [
   './',
   './index.html',
   './style.css',
-  './script.js',
-  'https://via.placeholder.com/250?text=No+Image',
-  'https://via.placeholder.com/250?text=Error+Image'
+  './script.js'
 ];
 
-// URLs de la API que se cachearán
-const API_URLS = [
-  'https://api.fbi.gov/wanted/v1/list'
-];
-
-// Instalar el Service Worker
+// Instalar
 self.addEventListener('install', event => {
-  console.log('🔧 Service Worker: Instalando...');
-  
+  console.log('SW: Instalando...');
   event.waitUntil(
-    caches.open(STATIC_CACHE)
+    caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('📦 Service Worker: Cacheando archivos estáticos');
-        // Cachear archivos uno por uno para evitar errores
+        console.log('SW: Cacheando archivos...');
         return Promise.allSettled(
-          STATIC_FILES.map(url => {
-            return cache.add(url).catch(error => {
-              console.warn(`⚠️ No se pudo cachear ${url}:`, error);
+          FILES_TO_CACHE.map(url => 
+            cache.add(url).catch(err => {
+              console.warn('SW: No se pudo cachear', url);
               return null;
-            });
-          })
+            })
+          )
         );
       })
       .then(() => {
-        console.log('✅ Service Worker: Instalación completada');
-        return self.skipWaiting(); // Activar inmediatamente
-      })
-      .catch(error => {
-        console.error('❌ Service Worker: Error durante la instalación:', error);
+        console.log('SW: Instalación completa');
+        return self.skipWaiting();
       })
   );
 });
 
-// Activar el Service Worker
+// Activar
 self.addEventListener('activate', event => {
-  console.log('🚀 Service Worker: Activando...');
-  
+  console.log('SW: Activando...');
   event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            // Eliminar cachés antiguas
-            if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-              console.log('🗑️ Service Worker: Eliminando caché antigua:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('SW: Eliminando caché antigua');
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('SW: Activado');
+      return self.clients.claim();
+    })
+  );
+});
+
+// Fetch
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // Saltar requests de GitHub
+  if (url.hostname.includes('github.dev') || 
+      url.pathname.includes('auth')) {
+    return;
+  }
+  
+  // Manejar API del FBI
+  if (url.hostname === 'api.fbi.gov') {
+    event.respondWith(handleAPI(event.request));
+    return;
+  }
+  
+  // Otros requests - Network First
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        if (response.ok && event.request.method === 'GET') {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
       })
-      .then(() => {
-        console.log('✅ Service Worker: Activación completada');
-        return self.clients.claim(); // Tomar control inmediatamente
+      .catch(() => {
+        return caches.match(event.request);
       })
   );
 });
 
-// Interceptar requests - versión simplificada para Codespaces
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-  
-  // Saltar requests de autenticación de Codespaces
-  if (url.hostname.includes('github.dev') || 
-      url.pathname.includes('auth') || 
-      url.pathname.includes('signin') ||
-      url.pathname.includes('postback')) {
-    return; // Dejar que maneje el navegador
-  }
-  
-  // Manejar solicitudes a la API del FBI
-  if (url.origin === 'https://api.fbi.gov') {
-    event.respondWith(handleAPIRequest(request));
-    return;
-  }
-  
-  // Manejar manifest.json con cuidado especial
-  if (request.url.includes('manifest.json')) {
-    event.respondWith(handleManifest(request));
-    return;
-  }
-  
-  // Manejar archivos estáticos (HTML, CSS, JS, imágenes)
-  if (request.destination === 'document' || 
-      request.destination === 'script' || 
-      request.destination === 'style' ||
-      request.destination === 'image') {
-    event.respondWith(handleStaticRequest(request));
-    return;
-  }
-});
-
-// Manejar manifest con fallback
-async function handleManifest(request) {
+// Manejar API
+async function handleAPI(request) {
   try {
-    // Intentar obtener desde caché primero
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // Si no está en caché, intentar desde red
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      // Guardar en caché para próxima vez
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
-      return networkResponse;
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+      return response;
     }
   } catch (error) {
-    console.warn('⚠️ Error cargando manifest:', error);
+    console.log('SW: Error API, buscando en caché');
   }
   
-  // Fallback: crear manifest básico
-  const fallbackManifest = {
-    name: "FBI Wanted",
-    short_name: "FBI Wanted",
-    start_url: "./",
-    display: "standalone",
-    background_color: "#000000",
-    theme_color: "#00285e"
-  };
+  const cached = await caches.match(request);
+  if (cached) {
+    return cached;
+  }
   
-  return new Response(JSON.stringify(fallbackManifest), {
+  // Fallback offline
+  return new Response(JSON.stringify({
+    items: [],
+    offline: true,
+    message: 'Sin conexión'
+  }), {
     headers: { 'Content-Type': 'application/json' }
   });
-}
-
-// Manejar solicitudes a la API (Network First con fallback a caché)
-async function handleAPIRequest(request) {
-  try {
-    // Intentar obtener datos frescos de la red
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Si la respuesta es exitosa, guardar en caché dinámico
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
-      return networkResponse;
-    }
-  } catch (error) {
-    console.log('🌐 Service Worker: Error de red, buscando en caché:', error);
-  }
-  
-  // Si falla la red o hay error, buscar en caché
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  // Si no hay caché, devolver respuesta offline
-  return new Response(
-    JSON.stringify({
-      items: [],
-      offline: true,
-      message: 'Datos no disponibles sin conexión'
-    }),
-    {
-      status: 200,
-      statusText: 'OK',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-  );
-}
-
-// Manejar archivos estáticos (Cache First)
-async function handleStaticRequest(request) {
-  try {
-    // Buscar primero en caché
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // Si no está en caché, obtener de la red
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      // Guardar en caché dinámico
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    console.error('❌ Service Worker: Error al obtener recurso:', error);
-    
-    // Fallback para páginas HTML
-    if (request.destination === 'document') {
-      const fallbackHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head><title>FBI Wanted - Offline</title></head>
-        <body>
-          <h1>🚫 Sin conexión</h1>
-          <p>La aplicación no está disponible offline en este momento.</p>
-          <button onclick="window.location.reload()">🔄 Reintentar</button>
-        </body>
-        </html>
-      `;
-      return new Response(fallbackHTML, {
-        headers: { 'Content-Type': 'text/html' }
-      });
-    }
-    
-    // Para otros recursos, devolver error
-    return new Response('Recurso no disponible offline', {
-      status: 503,
-      statusText: 'Service Unavailable'
-    });
-  }
 }
