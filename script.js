@@ -1,13 +1,150 @@
+// ============ PWA FUNCTIONALITY ============
+
+// Variables para PWA
+let deferredPrompt;
+let isInstalled = false;
+
+// Registrar Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async () => {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registrado:', registration);
+            
+            // Actualizar estado en la UI
+            updateSWStatus('Service Worker activo');
+            
+            // Escuchar actualizaciones
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateButton();
+                    }
+                });
+            });
+            
+        } catch (error) {
+            console.error('Error al registrar Service Worker:', error);
+            updateSWStatus('Service Worker no disponible');
+        }
+    });
+}
+
+// Manejar evento de instalación PWA
+window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('PWA: Evento de instalación detectado');
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+});
+
+// Detectar si ya está instalada
+window.addEventListener('appinstalled', () => {
+    console.log('PWA: Aplicación instalada');
+    isInstalled = true;
+    hideInstallBanner();
+});
+
+// Mostrar banner de instalación
+function showInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (banner && !isInstalled) {
+        banner.style.display = 'block';
+        
+        // Evento para instalar
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('PWA: Resultado de instalación:', outcome);
+                deferredPrompt = null;
+                hideInstallBanner();
+            }
+        });
+        
+        // Evento para cerrar banner
+        document.getElementById('dismissBtn').addEventListener('click', () => {
+            hideInstallBanner();
+        });
+    }
+}
+
+// Ocultar banner de instalación
+function hideInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+}
+
+// Mostrar botón de actualización
+function showUpdateButton() {
+    const updateBtn = document.getElementById('updateBtn');
+    if (updateBtn) {
+        updateBtn.style.display = 'block';
+        updateBtn.addEventListener('click', () => {
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ command: 'skipWaiting' });
+            }
+            window.location.reload();
+        });
+    }
+}
+
+// Actualizar estado del Service Worker en la UI
+function updateSWStatus(status) {
+    const swStatus = document.getElementById('swStatus');
+    if (swStatus) {
+        swStatus.textContent = status;
+    }
+}
+
+// Detectar estado de conexión
+function updateConnectionStatus() {
+    const statusElement = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('connectionText');
+    
+    if (navigator.onLine) {
+        statusElement.style.display = 'none';
+    } else {
+        statusElement.style.display = 'block';
+        statusText.textContent = 'Sin conexión - Modo offline';
+    }
+}
+
+// Escuchar cambios de conexión
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+
+// ============ APLICACIÓN ORIGINAL ============
+
 // Ocultar splash después de 2.5 segundos
 window.addEventListener('load', () => {
     setTimeout(() => {
         document.getElementById('splashScreen').style.display = 'none';
         document.querySelector('.app-container').style.display = 'block';
+        
+        // Verificar estado de conexión
+        updateConnectionStatus();
+        
+        // Verificar parámetros URL para deep linking
+        checkURLParams();
     }, 2500);
     
     // Cargar datos automáticamente al iniciar la aplicación
     loadWantedData();
 });
+
+// Deep linking - verificar parámetros URL
+function checkURLParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    
+    if (tab && ['home', 'wanted', 'favorites', 'search', 'register', 'about'].includes(tab)) {
+        showTab(tab);
+    }
+}
 
 // Variables globales
 let allWantedData = []; // Almacena todos los datos de la API
@@ -21,11 +158,23 @@ function showTab(tabId) {
     });
     document.getElementById(tabId).classList.add('active');
     
+    // Actualizar URL para deep linking
+    const newURL = new URL(window.location);
+    newURL.searchParams.set('tab', tabId);
+    window.history.pushState({ tab: tabId }, '', newURL);
+    
     // Cargar contenido específico según la pestaña seleccionada
     if (tabId === 'favorites') {
         renderFavorites();
     }
 }
+
+// Manejar navegación con botones del navegador
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.tab) {
+        showTab(event.state.tab);
+    }
+});
 
 // Cargar datos de la API
 document.getElementById('loadDataBtn').addEventListener('click', loadWantedData);
@@ -34,7 +183,7 @@ function loadWantedData() {
     const apiUrl = 'https://api.fbi.gov/wanted/v1/list';
     
     // Mostrar indicador de carga
-    document.getElementById('wantedList').innerHTML = '<p>Cargando datos...</p>';
+    document.getElementById('wantedList').innerHTML = '<div class="loading"></div>';
     
     // Agregar un tiempo de espera para la solicitud fetch
     const timeoutPromise = new Promise((_, reject) => {
@@ -67,6 +216,13 @@ function loadWantedData() {
         
         // Preparar los filtros una vez que tengamos los datos
         prepareFilters();
+        
+        // Registrar sincronización en segundo plano
+        if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+            navigator.serviceWorker.ready.then(registration => {
+                return registration.sync.register('background-sync');
+            });
+        }
     })
     .catch(error => {
         console.error('Error al obtener los datos:', error);
@@ -75,8 +231,11 @@ function loadWantedData() {
         loadBackupData();
         
         document.getElementById('wantedList').innerHTML = `
-            <p>No se pudieron cargar los datos desde la API del FBI. Se han cargado datos de ejemplo.</p>
-            <button onclick="loadWantedData()" class="retry-btn">Reintentar</button>
+            <div class="error-message">
+                <p>⚠️ No se pudieron cargar los datos desde la API del FBI.</p>
+                <p>Usando datos de ejemplo ${navigator.onLine ? '(problema de servidor)' : '(modo offline)'}.</p>
+                <button onclick="loadWantedData()" class="retry-btn">🔄 Reintentar</button>
+            </div>
         `;
     });
 }
@@ -157,7 +316,7 @@ function renderWantedList(dataArray) {
     wantedList.innerHTML = '';
     
     if (dataArray.length === 0) {
-        wantedList.innerHTML = '<p>No se encontraron personas buscadas con los criterios seleccionados.</p>';
+        wantedList.innerHTML = '<div class="empty-message"><p>No se encontraron personas buscadas con los criterios seleccionados.</p></div>';
         return;
     }
     
@@ -176,14 +335,14 @@ function renderWantedList(dataArray) {
         const favoriteText = isFavorite ? 'Quitar de Favoritos' : 'Añadir a Favoritos';
 
         div.innerHTML = `
-            <img src="${photoUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'">
+            <img src="${photoUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'" loading="lazy">
             <h3>${name}</h3>
             <p><strong>Oficinas:</strong> ${offices}</p>
             <p><strong>Recompensa:</strong> ${reward}</p>
-            <button class="favorite-btn ${favoriteClass}" data-id="${item.uid}">
+            <button class="favorite-btn ${favoriteClass}" data-id="${item.uid}" aria-label="${favoriteText}">
                 ${isFavorite ? '❤️' : '🤍'} ${favoriteText}
             </button>
-            <button class="details-btn" data-id="${item.uid}">Ver Detalles</button>
+            <button class="details-btn" data-id="${item.uid}" aria-label="Ver detalles de ${name}">Ver Detalles</button>
         `;
 
         wantedList.appendChild(div);
@@ -194,8 +353,10 @@ function renderWantedList(dataArray) {
             e.target.classList.toggle('favorite-active');
             if (e.target.classList.contains('favorite-active')) {
                 e.target.innerHTML = `❤️ Quitar de Favoritos`;
+                e.target.setAttribute('aria-label', 'Quitar de Favoritos');
             } else {
                 e.target.innerHTML = `🤍 Añadir a Favoritos`;
+                e.target.setAttribute('aria-label', 'Añadir a Favoritos');
             }
         });
         
@@ -222,6 +383,7 @@ function prepareFilters() {
     const officeSelect = document.createElement('select');
     officeSelect.id = 'officeFilter';
     officeSelect.innerHTML = '<option value="">Todas las oficinas</option>';
+    officeSelect.setAttribute('aria-label', 'Filtrar por oficina');
     
     Array.from(allOffices).sort().forEach(office => {
         officeSelect.innerHTML += `<option value="${office}">${office}</option>`;
@@ -232,37 +394,71 @@ function prepareFilters() {
     nameInput.type = 'text';
     nameInput.id = 'nameFilter';
     nameInput.placeholder = 'Filtrar por nombre...';
+    nameInput.setAttribute('aria-label', 'Filtrar por nombre');
     
     // Crear botón para aplicar filtros
     const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Aplicar Filtros';
+    applyBtn.textContent = '🔍 Aplicar Filtros';
     applyBtn.id = 'applyFilters';
+    applyBtn.setAttribute('aria-label', 'Aplicar filtros seleccionados');
     
     // Crear botón para reiniciar filtros
     const resetBtn = document.createElement('button');
-    resetBtn.textContent = 'Reiniciar Filtros';
+    resetBtn.textContent = '🔄 Reiniciar Filtros';
     resetBtn.id = 'resetFilters';
+    resetBtn.setAttribute('aria-label', 'Reiniciar todos los filtros');
     
     // Añadir elementos al contenedor de filtros
-    filterSection.appendChild(document.createElement('h3')).textContent = 'Filtros';
-    filterSection.appendChild(document.createTextNode('Oficina: '));
+    const filterTitle = document.createElement('h3');
+    filterTitle.textContent = 'Filtros';
+    filterSection.appendChild(filterTitle);
+    
+    const officeLabel = document.createElement('label');
+    officeLabel.textContent = 'Oficina: ';
+    officeLabel.htmlFor = 'officeFilter';
+    filterSection.appendChild(officeLabel);
     filterSection.appendChild(officeSelect);
     filterSection.appendChild(document.createElement('br'));
-    filterSection.appendChild(document.createTextNode('Nombre: '));
+    
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = 'Nombre: ';
+    nameLabel.htmlFor = 'nameFilter';
+    filterSection.appendChild(nameLabel);
     filterSection.appendChild(nameInput);
     filterSection.appendChild(document.createElement('br'));
-    filterSection.appendChild(applyBtn);
-    filterSection.appendChild(resetBtn);
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'filter-buttons';
+    buttonContainer.appendChild(applyBtn);
+    buttonContainer.appendChild(resetBtn);
+    filterSection.appendChild(buttonContainer);
     
     // Añadir eventos a los filtros
     document.getElementById('applyFilters').addEventListener('click', applyFilters);
     document.getElementById('resetFilters').addEventListener('click', resetFilters);
+    
+    // Aplicar filtros en tiempo real
+    nameInput.addEventListener('input', debounce(applyFilters, 300));
+    officeSelect.addEventListener('change', applyFilters);
+}
+
+// Función debounce para optimizar búsquedas
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 // Aplicar filtros a la lista
 function applyFilters() {
-    const officeFilter = document.getElementById('officeFilter').value;
-    const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+    const officeFilter = document.getElementById('officeFilter')?.value || '';
+    const nameFilter = document.getElementById('nameFilter')?.value.toLowerCase() || '';
     
     let filteredData = [...allWantedData];
     
@@ -282,13 +478,38 @@ function applyFilters() {
     
     // Mostrar resultados filtrados
     renderWantedList(filteredData);
+    
+    // Mostrar contador de resultados
+    showFilterResults(filteredData.length, allWantedData.length);
+}
+
+// Mostrar contador de resultados de filtros
+function showFilterResults(filtered, total) {
+    let resultCounter = document.getElementById('filterResults');
+    if (!resultCounter) {
+        resultCounter = document.createElement('p');
+        resultCounter.id = 'filterResults';
+        resultCounter.className = 'filter-results';
+        document.getElementById('filterOptions').appendChild(resultCounter);
+    }
+    
+    if (filtered === total) {
+        resultCounter.textContent = `Mostrando todos los ${total} resultados`;
+    } else {
+        resultCounter.textContent = `Mostrando ${filtered} de ${total} resultados`;
+    }
 }
 
 // Reiniciar filtros
 function resetFilters() {
-    document.getElementById('officeFilter').value = '';
-    document.getElementById('nameFilter').value = '';
+    const officeFilter = document.getElementById('officeFilter');
+    const nameFilter = document.getElementById('nameFilter');
+    
+    if (officeFilter) officeFilter.value = '';
+    if (nameFilter) nameFilter.value = '';
+    
     renderWantedList(allWantedData);
+    showFilterResults(allWantedData.length, allWantedData.length);
 }
 
 // CRUD para favoritos
@@ -305,9 +526,13 @@ function toggleFavorite(item) {
             reward: item.reward_text,
             dateAdded: new Date().toISOString()
         });
+        
+        // Mostrar notificación
+        showNotification(`${item.title} añadido a favoritos`);
     } else {
         // Eliminar de favoritos
         favorites.splice(index, 1);
+        showNotification(`${item.title} eliminado de favoritos`);
     }
     
     // Guardar en localStorage
@@ -319,13 +544,39 @@ function toggleFavorite(item) {
     }
 }
 
+// Mostrar notificación toast
+function showNotification(message) {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = 'toast-notification';
+    notification.textContent = message;
+    
+    // Añadir al DOM
+    document.body.appendChild(notification);
+    
+    // Mostrar con animación
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
 // Renderizar lista de favoritos
 function renderFavorites() {
     const favoriteList = document.getElementById('favoritesList');
     favoriteList.innerHTML = '';
     
     if (favorites.length === 0) {
-        favoriteList.innerHTML = '<p>No tienes favoritos guardados.</p>';
+        favoriteList.innerHTML = '<div class="empty-message"><p>📋 No tienes favoritos guardados.</p><p>Marca personas como favoritas desde la lista de buscados.</p></div>';
         return;
     }
     
@@ -337,12 +588,12 @@ function renderFavorites() {
         const reward = item.reward || 'Sin información de recompensa';
 
         div.innerHTML = `
-            <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'">
+            <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'" loading="lazy">
             <h3>${item.title}</h3>
             <p><strong>Oficinas:</strong> ${offices}</p>
             <p><strong>Recompensa:</strong> ${reward}</p>
             <p><strong>Añadido el:</strong> ${new Date(item.dateAdded).toLocaleDateString()}</p>
-            <button class="remove-favorite-btn" data-id="${item.id}">❌ Eliminar de Favoritos</button>
+            <button class="remove-favorite-btn" data-id="${item.id}" aria-label="Eliminar ${item.title} de favoritos">❌ Eliminar de Favoritos</button>
         `;
 
         favoriteList.appendChild(div);
@@ -356,9 +607,14 @@ function renderFavorites() {
 
 // Eliminar favorito
 function removeFavorite(id) {
+    const item = favorites.find(fav => fav.id === id);
     favorites = favorites.filter(item => item.id !== id);
     localStorage.setItem('favorites', JSON.stringify(favorites));
     renderFavorites();
+    
+    if (item) {
+        showNotification(`${item.title} eliminado de favoritos`);
+    }
 }
 
 // Función para mostrar detalles de una persona (funcionalidad única)
@@ -366,23 +622,28 @@ function showPersonDetails(item) {
     // Crear un modal para los detalles
     const modal = document.createElement('div');
     modal.classList.add('modal');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'modal-title');
+    modal.setAttribute('aria-modal', 'true');
     
     const modalContent = document.createElement('div');
     modalContent.classList.add('modal-content');
     
-    const closeButton = document.createElement('span');
+    const closeButton = document.createElement('button');
     closeButton.classList.add('close-button');
     closeButton.innerHTML = '&times;';
+    closeButton.setAttribute('aria-label', 'Cerrar modal');
     closeButton.addEventListener('click', () => {
         document.body.removeChild(modal);
+        document.body.style.overflow = ''; // Restaurar scroll
     });
     
     // Obtener más detalles de la persona
     const photoUrl = item.images && item.images[0] ? item.images[0].original : 'https://via.placeholder.com/250?text=No+Image';
     const name = item.title || 'Nombre no disponible';
     const details = `
-        <img src="${photoUrl}" alt="${name}" class="detail-image" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'">
-        <h2>${name}</h2>
+        <img src="${photoUrl}" alt="${name}" class="detail-image" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'" loading="lazy">
+        <h2 id="modal-title">${name}</h2>
         <div class="details-grid">
             <p><strong>Descripción:</strong> ${item.description || 'No disponible'}</p>
             <p><strong>Oficinas:</strong> ${item.field_offices?.join(', ') || 'No disponible'}</p>
@@ -392,8 +653,8 @@ function showPersonDetails(item) {
             <p><strong>Fecha de Publicación:</strong> ${new Date(item.publication || '').toLocaleDateString() || 'No disponible'}</p>
         </div>
         <div class="details-actions">
-            <a href="${item.url || '#'}" target="_blank" class="details-link">Ver en la web del FBI</a>
-            <button id="shareBtn">Compartir</button>
+            <a href="${item.url || '#'}" target="_blank" rel="noopener noreferrer" class="details-link">🔗 Ver en la web del FBI</a>
+            <button id="shareBtn" aria-label="Compartir información">📤 Compartir</button>
         </div>
     `;
     
@@ -403,32 +664,52 @@ function showPersonDetails(item) {
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
     
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
+    
+    // Focus en el modal
+    modalContent.focus();
+    
     // Añadir función de compartir (Web Share API)
+    const shareBtn = document.getElementById('shareBtn');
     if (navigator.share) {
-        document.getElementById('shareBtn').addEventListener('click', () => {
-            navigator.share({
-                title: name,
-                text: `Información de persona buscada: ${name}`,
-                url: item.url || window.location.href
-            })
-            .catch(console.error);
+        shareBtn.addEventListener('click', async () => {
+            try {
+                await navigator.share({
+                    title: `FBI Wanted: ${name}`,
+                    text: `Información de persona buscada: ${name}`,
+                    url: item.url || window.location.href
+                });
+            } catch (error) {
+                console.log('Error al compartir:', error);
+            }
         });
     } else {
         // Si Web Share API no está disponible, cambiar el botón por uno de copiar info
-        const shareBtn = document.getElementById('shareBtn');
-        shareBtn.textContent = 'Copiar Información';
-        shareBtn.addEventListener('click', () => {
-            const info = `${name}\nOficinas: ${item.field_offices?.join(', ') || 'No disponible'}\nRecompensa: ${item.reward_text || 'No disponible'}`;
-            navigator.clipboard.writeText(info)
-                .then(() => {
-                    shareBtn.textContent = '¡Copiado!';
-                    setTimeout(() => {
-                        shareBtn.textContent = 'Copiar Información';
-                    }, 2000);
-                })
-                .catch(() => {
-                    alert('No se pudo copiar la información');
-                });
+        shareBtn.textContent = '📋 Copiar Información';
+        shareBtn.addEventListener('click', async () => {
+            const info = `${name}\nOficinas: ${item.field_offices?.join(', ') || 'No disponible'}\nRecompensa: ${item.reward_text || 'No disponible'}\nURL: ${item.url || window.location.href}`;
+            
+            try {
+                await navigator.clipboard.writeText(info);
+                shareBtn.textContent = '✅ ¡Copiado!';
+                setTimeout(() => {
+                    shareBtn.textContent = '📋 Copiar Información';
+                }, 2000);
+            } catch (error) {
+                // Fallback para navegadores sin clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = info;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                shareBtn.textContent = '✅ ¡Copiado!';
+                setTimeout(() => {
+                    shareBtn.textContent = '📋 Copiar Información';
+                }, 2000);
+            }
         });
     }
     
@@ -436,28 +717,49 @@ function showPersonDetails(item) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             document.body.removeChild(modal);
+            document.body.style.overflow = ''; // Restaurar scroll
         }
     });
+    
+    // Cerrar modal con tecla Escape
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            document.body.removeChild(modal);
+            document.body.style.overflow = ''; // Restaurar scroll
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
 }
 
 // Manejar la búsqueda en la pestaña "Buscar"
-document.getElementById('searchInput').addEventListener('input', () => {
+document.getElementById('searchInput').addEventListener('input', debounce(() => {
     const query = document.getElementById('searchInput').value.toLowerCase();
     
     if (query.length < 3) {
-        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('searchResults').innerHTML = '<p class="search-hint">💡 Ingresa al menos 3 caracteres para buscar</p>';
         return;
     }
     
-    const results = allWantedData.filter(item => item.title?.toLowerCase().includes(query));
+    const results = allWantedData.filter(item => 
+        item.title?.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query) ||
+        item.field_offices?.some(office => office.toLowerCase().includes(query))
+    );
     
     const resultsContainer = document.getElementById('searchResults');
     resultsContainer.innerHTML = '';
     
     if (results.length === 0) {
-        resultsContainer.innerHTML = '<p>No se encontraron coincidencias.</p>';
+        resultsContainer.innerHTML = '<div class="empty-message"><p>🔍 No se encontraron coincidencias.</p><p>Intenta con otros términos de búsqueda.</p></div>';
         return;
     }
+    
+    // Mostrar contador de resultados
+    const resultHeader = document.createElement('p');
+    resultHeader.className = 'search-results-header';
+    resultHeader.textContent = `Encontrados ${results.length} resultado${results.length > 1 ? 's' : ''}:`;
+    resultsContainer.appendChild(resultHeader);
     
     results.forEach(item => {
         const div = document.createElement('div');
@@ -468,10 +770,10 @@ document.getElementById('searchInput').addEventListener('input', () => {
         const offices = item.field_offices?.join(', ') || 'Oficinas no disponibles';
         
         div.innerHTML = `
-            <img src="${photoUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'">
+            <img src="${photoUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/250?text=Error+Image'" loading="lazy">
             <h3>${name}</h3>
             <p><strong>Oficinas:</strong> ${offices}</p>
-            <button class="details-btn" data-id="${item.uid}">Ver Detalles</button>
+            <button class="details-btn" data-id="${item.uid}" aria-label="Ver detalles de ${name}">Ver Detalles</button>
         `;
         
         resultsContainer.appendChild(div);
@@ -481,7 +783,7 @@ document.getElementById('searchInput').addEventListener('input', () => {
             showPersonDetails(item);
         });
     });
-});
+}, 300));
 
 // Formulario de registro (solo simulación)
 document.getElementById('registerForm')?.addEventListener('submit', function(e) {
@@ -489,7 +791,106 @@ document.getElementById('registerForm')?.addEventListener('submit', function(e) 
     
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
+    const interests = [];
     
-    alert(`Gracias, ${name}. Tu registro ha sido recibido en ${email}. Esta es una simulación, no se ha enviado información real.`);
+    // Obtener intereses seleccionados
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+        interests.push(checkbox.value);
+    });
+    
+    if (interests.length === 0) {
+        alert('Por favor selecciona al menos un interés.');
+        return;
+    }
+    
+    // Simular registro
+    showNotification(`¡Registro exitoso! Bienvenido ${name}`);
+    
+    // Guardar en localStorage para futuras funcionalidades
+    const userData = {
+        name,
+        email,
+        interests,
+        registrationDate: new Date().toISOString()
+    };
+    localStorage.setItem('userData', JSON.stringify(userData));
+    
     this.reset();
+});
+
+// Función para exportar favoritos (funcionalidad adicional)
+function exportFavorites() {
+    if (favorites.length === 0) {
+        showNotification('No tienes favoritos para exportar');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(favorites, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = 'fbi-wanted-favoritos.json';
+    link.click();
+    
+    showNotification('Favoritos exportados correctamente');
+}
+
+// Función para importar favoritos
+function importFavorites(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedFavorites = JSON.parse(e.target.result);
+            
+            if (Array.isArray(importedFavorites)) {
+                favorites = [...favorites, ...importedFavorites];
+                // Eliminar duplicados
+                favorites = favorites.filter((item, index, self) => 
+                    index === self.findIndex(t => t.id === item.id)
+                );
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                renderFavorites();
+                showNotification(`${importedFavorites.length} favoritos importados`);
+            } else {
+                throw new Error('Formato de archivo inválido');
+            }
+        } catch (error) {
+            showNotification('Error al importar favoritos');
+            console.error('Error:', error);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Inicializar funcionalidades adicionales al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    // Verificar si hay datos de usuario guardados
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        const user = JSON.parse(userData);
+        console.log('Usuario registrado:', user.name);
+    }
+    
+    // Configurar lazy loading para imágenes
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    observer.unobserve(img);
+                }
+            });
+        });
+        
+        // Observar todas las imágenes con clase lazy
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
 });
