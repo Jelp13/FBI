@@ -107,20 +107,7 @@ body {
     opacity: 1;
 }
 
-/* Información PWA en home */
-.pwa-info {
-    background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
-    padding: 20px;
-    border-radius: 12px;
-    margin-top: 20px;
-    border-left: 4px solid #007BFF;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
 
-.pwa-info h3 {
-    color: #00285e;
-    margin-top: 0;
-}
 
 /* Estado del Service Worker */
 .sw-info {
